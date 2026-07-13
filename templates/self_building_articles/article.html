@@ -1,0 +1,637 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} — Self-Building Articles{% endblock %}
+
+{% block head %}
+<style>
+  body { background: #f9fafb; }
+  .sba-app { display: grid; grid-template-columns: 220px 1fr 420px; height: calc(100vh - 60px); background: #f9fafb; color: #111827; }
+  .sba-col { overflow-y: auto; }
+  .sba-col-left { background: #fff; border-right: 1px solid #e5e7eb; padding: 16px; }
+  .sba-col-mid { padding: 20px 28px; }
+  .sba-col-right { background: #fff; border-left: 1px solid #e5e7eb; padding: 20px; }
+
+  .sba-back { font-size: 12px; color: #6b7280; text-decoration: none; }
+  .sba-back:hover { color: #111827; }
+  .sba-art-list { list-style:none; padding:0; margin: 14px 0 0; font-size: 13px; }
+  .sba-art-list li { padding: 8px 10px; border-radius: 5px; cursor: pointer; color: #4b5563; margin-bottom: 2px; }
+  .sba-art-list li:hover { background: #f3f4f6; }
+  .sba-art-list li.active { background: #eef2ff; color: #3730a3; font-weight: 500; }
+  .sba-art-list a { color: inherit; text-decoration: none; display: block; }
+  .sba-art-list .ct { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+  .sba-title-row { display:flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .sba-title { font-size: 22px; font-weight: 600; color: #111827; cursor: pointer; padding: 4px 6px; margin: -4px -6px; border-radius: 4px; }
+  .sba-title:hover { background: #fff; }
+  .sba-title-input { font-size: 22px; font-weight: 600; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; width: 100%; }
+  .sba-status-pill { font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 500; background: #e0e7ff; color: #3730a3; white-space: nowrap; }
+
+  .sba-thesis-box {
+    background: #fff; border: 1px dashed #d1d5db; border-radius: 8px; padding: 12px 14px;
+    color: #374151; font-size: 14px; line-height: 1.5; margin-bottom: 18px; cursor: text;
+    min-height: 50px; white-space: pre-wrap;
+  }
+  .sba-thesis-box.empty { color: #9ca3af; font-style: italic; }
+  .sba-thesis-edit { width: 100%; min-height: 80px; padding: 12px 14px; border: 1px solid #6366f1; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; }
+
+  .sba-add-box { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+  .sba-add-box textarea { width: 100%; border: none; outline: none; font-family: inherit; font-size: 14px; min-height: 50px; resize: vertical; color: #111827; box-sizing: border-box; }
+  .sba-add-toolbar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 10px; }
+  .sba-add-toolbar label { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .sba-btn { background: #111827; color: #fff; border: none; padding: 7px 14px; border-radius: 5px; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .sba-btn:hover { background: #1f2937; }
+  .sba-btn.ghost { background: #fff; color: #111827; border: 1px solid #d1d5db; }
+  .sba-btn.ghost:hover { background: #f9fafb; }
+  .sba-btn.danger { background: #fff; color: #b91c1c; border: 1px solid #fecaca; }
+  .sba-btn.danger:hover { background: #fef2f2; }
+  .sba-btn.tiny { padding: 3px 8px; font-size: 11px; }
+  .sba-btn.accent { background: #4f46e5; }
+  .sba-btn.accent:hover { background: #4338ca; }
+
+  .sba-scrap { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 14px; margin-bottom: 10px; position: relative; }
+  .sba-scrap.cp { border-left: 3px solid #f59e0b; }
+  .sba-scrap.research { border-left: 3px solid #10b981; }
+  .sba-scrap-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .sba-scrap-kind { font-weight: 600; }
+  .sba-scrap-kind.cp { color: #b45309; }
+  .sba-scrap-kind.research { color: #047857; }
+  .sba-scrap-content { font-size: 14px; color: #1f2937; line-height: 1.55; white-space: pre-wrap; word-wrap: break-word; }
+  .sba-scrap-summary { background: #f9fafb; border-left: 2px solid #6366f1; padding: 8px 12px; margin-top: 8px; font-size: 13px; color: #374151; border-radius: 0 4px 4px 0; white-space: pre-wrap; }
+  .sba-scrap-url { font-size: 12px; color: #4f46e5; word-break: break-all; margin-top: 6px; }
+  .sba-scrap-url a { color: inherit; }
+  .sba-url-details summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .sba-url-details summary::-webkit-details-marker { display: none; }
+  .sba-url-details summary::before { content: '▸'; color: #9ca3af; font-size: 10px; transition: transform 100ms; }
+  .sba-url-details[open] summary::before { transform: rotate(90deg); }
+  .sba-url-dom { font-size: 13px; font-weight: 500; color: #4f46e5; }
+  .sba-url-hint { font-size: 11px; color: #9ca3af; }
+  .sba-scrap-pending { font-size: 11px; color: #92400e; font-style: italic; }
+  .sba-scrap-actions { position: absolute; top: 10px; right: 10px; opacity: 0; transition: opacity 100ms; }
+  .sba-scrap:hover .sba-scrap-actions { opacity: 1; }
+
+  /* Drafted sections */
+  .sba-sections { margin-bottom: 18px; }
+  .sba-section-card { background: #fff; border: 1px solid #c7d2fe; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+  .sba-section-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; cursor: pointer; background: #eef2ff; }
+  .sba-section-title { font-size: 13px; font-weight: 600; color: #3730a3; }
+  .sba-section-status { font-size: 11px; color: #6b7280; }
+  .sba-section-body { padding: 12px 16px; font-size: 14px; line-height: 1.6; color: #1f2937; display: none; }
+  .sba-section-body.open { display: block; }
+  .sba-section-body textarea { width: 100%; min-height: 200px; font-family: ui-monospace, monospace; font-size: 13px; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+  .sba-section-tools { margin-top: 8px; display: flex; gap: 6px; }
+
+  /* Story panel */
+  .sba-story-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .sba-story-title { font-size: 14px; font-weight: 600; color: #111827; text-transform: uppercase; letter-spacing: 0.05em; }
+  .sba-panel-hint { font-size: 11px; color: #9ca3af; line-height: 1.45; margin: 2px 0 10px; }
+  .sba-panel-hint strong { color: #6b7280; }
+  .sba-story-meta { font-size: 11px; color: #6b7280; margin-bottom: 10px; display:flex; align-items:center; gap:8px; flex-wrap: wrap; }
+  .sba-story-meta select { font-size: 11px; border: 1px solid #d1d5db; border-radius: 4px; padding: 1px 4px; color: #374151; background: #fff; }
+  .sba-story { font-size: 13px; color: #1f2937; line-height: 1.6; }
+  .sba-story h2 { font-size: 14px; color: #111827; margin: 18px 0 8px; }
+  .sba-story h3 { font-size: 13px; color: #111827; margin: 12px 0 6px; }
+  .sba-story ul { padding-left: 20px; margin: 6px 0; }
+  .sba-story li { margin-bottom: 4px; }
+  .sba-story p { margin: 0 0 10px; }
+  .sba-story em { color: #6b7280; }
+  .sba-story strong { color: #111827; }
+
+  .sba-gap-li { display: flex; align-items: flex-start; gap: 6px; }
+  .sba-gap-li .gap-txt { flex: 1; }
+  .sba-draft-btn, .sba-research-btn {
+    font-size: 10px; padding: 2px 7px; border-radius: 4px; cursor: pointer; border: 1px solid;
+    white-space: nowrap; margin-left: 6px; background: #fff;
+  }
+  .sba-draft-btn { color: #4338ca; border-color: #c7d2fe; }
+  .sba-written-tag { font-size: 10px; font-weight: 600; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+  .sba-draft-btn:hover { background: #eef2ff; }
+  .sba-research-btn { color: #047857; border-color: #a7f3d0; }
+  .sba-research-btn:hover { background: #ecfdf5; }
+
+  .sba-emerging { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+  .sba-emerging .lbl { font-size: 11px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+
+  /* Versions */
+  .sba-versions { margin-top: 22px; border-top: 1px solid #e5e7eb; padding-top: 14px; }
+  .sba-versions-title { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .sba-version { font-size: 12px; color: #374151; padding: 7px 9px; border-radius: 5px; margin-bottom: 4px; background: #f9fafb; border: 1px solid #f3f4f6; }
+  .sba-version .vh { display:flex; justify-content: space-between; color: #9ca3af; font-size: 11px; margin-bottom: 3px; }
+  .sba-version .vh a { color: #6366f1; text-decoration: none; cursor: pointer; }
+  .sba-version .note { white-space: pre-wrap; line-height: 1.45; }
+  .sba-version .note ul { margin: 2px 0; padding-left: 16px; }
+
+  .sba-actions-bar { display:flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .drop-overlay {
+    position: fixed; inset: 0; background: rgba(99,102,241,0.1); border: 4px dashed #6366f1;
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000; pointer-events: none; font-size: 24px; color: #4338ca; font-weight: 600;
+  }
+  .drop-overlay.show { display: flex; }
+
+  /* Version modal */
+  .sba-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 2000; }
+  .sba-modal-bg.show { display: flex; }
+  .sba-modal { background: #fff; border-radius: 10px; max-width: 640px; width: 92%; max-height: 80vh; overflow-y: auto; padding: 22px 26px; }
+  .sba-modal h4 { margin: 0 0 12px; font-size: 15px; color: #111827; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="drop-overlay" id="drop-overlay">Drop file to add as scrap</div>
+<div class="sba-modal-bg" id="version-modal" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="sba-modal">
+    <h4 id="vm-title">Story version</h4>
+    <div class="sba-story" id="vm-body"></div>
+  </div>
+</div>
+
+<div class="sba-app">
+
+  <!-- LEFT: article list -->
+  <div class="sba-col sba-col-left">
+    <a class="sba-back" href="/applications/self_building_articles/">← All articles</a>
+    <ul class="sba-art-list">
+      {% for a in all_articles %}
+      <li class="{{ 'active' if a.slug == article.slug else '' }}">
+        <a href="/applications/self_building_articles/{{ a.slug }}">
+          {{ a.title }}
+          <div class="ct">{{ a.scrap_count }} scrap{{ '' if a.scrap_count == 1 else 's' }} · {{ a.status }}</div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- MIDDLE: scrap stream + drafted sections -->
+  <div class="sba-col sba-col-mid">
+    <div class="sba-title-row">
+      <div id="title-display" class="sba-title" onclick="editTitle()">{{ article.title }}</div>
+      <span class="sba-status-pill {{ article.status }}">{{ article.status }}</span>
+    </div>
+
+    <div id="thesis-display" class="sba-thesis-box {{ 'empty' if not article.thesis else '' }}" onclick="editThesis()">{{ article.thesis or 'Click to write a thesis or problem statement…' }}</div>
+
+    <div class="sba-actions-bar">
+      <button class="sba-btn ghost" title="Re-read all scraps and re-render the panel on the right (outline, tensions, gaps). Runs automatically as you add scraps — use this to force it now." onclick="regenStory()">Regenerate story</button>
+      <button class="sba-btn danger" title="Deletes this article with all scraps, drafts and history. Asks for confirmation." onclick="deleteArticle()">Delete the story</button>
+    </div>
+
+    <div class="sba-sections" id="sections-wrap" style="{{ '' if sections else 'display:none' }}">
+      <div class="sba-versions-title" style="margin-bottom:2px;">The article (draft)</div>
+      <div class="sba-panel-hint">Real prose, written section by section. This is what becomes the article.</div>
+      <div id="sections-list"></div>
+    </div>
+
+    <div class="sba-add-box">
+      <textarea id="scrap-input" placeholder="Drop a scrap here — paste a URL, type a quote, dump a stream of thought, drag a file anywhere on the page…"></textarea>
+      <div class="sba-add-toolbar">
+        <label title="Mark material that argues AGAINST your thesis. Counterpoints get special weight in the analysis — they often reveal where the article's real edge is."><input type="checkbox" id="counterpoint" /> Tag as counterpoint</label>
+        <div>
+          <input type="file" id="file-input" style="display:none" onchange="uploadFile(this.files[0])" />
+          <button class="sba-btn ghost" onclick="document.getElementById('file-input').click()">Attach file</button>
+          <button class="sba-btn" onclick="submitScrap()">Add scrap</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="scrap-list"></div>
+  </div>
+
+  <!-- RIGHT: story panel -->
+  <div class="sba-col sba-col-right">
+    <div class="sba-story-head">
+      <div class="sba-story-title">What's emerging</div>
+    </div>
+    <div class="sba-panel-hint">The AI's read on your scraps &mdash; not the article itself. Regenerated from the full pile each time: what's taking shape, where scraps conflict (<strong>Tensions</strong>), what's still missing (<strong>Gaps</strong> &mdash; hit <strong>Research</strong> to fill one). Use <strong>Draft this section</strong> to turn an outline bucket into real prose (lands in the middle column).</div>
+    <div class="sba-story-meta">
+      <span id="story-meta-count">{{ article.scraps_since_story }} since last regen</span>
+      <span>·</span>
+      <label title="When the analysis re-runs on its own: after every N new scraps, or after every single scrap (slower, always fresh).">auto:
+        <select id="regen-mode" onchange="saveSettings()">
+          <option value="threshold" {{ 'selected' if (article.auto_regen_mode or 'threshold') == 'threshold' else '' }}>every N scraps</option>
+          <option value="every" {{ 'selected' if article.auto_regen_mode == 'every' else '' }}>every scrap</option>
+        </select>
+      </label>
+      <label id="threshold-wrap">N=
+        <select id="regen-threshold" onchange="saveSettings()">
+          {% for n in [2,3,4,5,6,8,10] %}
+          <option value="{{ n }}" {{ 'selected' if article.story_threshold == n else '' }}>{{ n }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="sba-story" id="story-body"></div>
+
+    <div class="sba-versions" id="versions-wrap" style="{{ '' if versions else 'display:none' }}">
+      <div class="sba-versions-title">What moved (version history)</div>
+      <div class="sba-panel-hint">Every regeneration is compared to the previous one — these notes track how the story is drifting as material accumulates. Click “view” for the full snapshot.</div>
+      <div id="versions-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SLUG = {{ article.slug|tojson }};
+let pollTimer = null;
+let openSections = new Set();
+let draftedTitles = new Set();
+let outlineRegistry = [];
+let gapRegistry = [];
+function draftSectionByIdx(i) { const o = outlineRegistry[i]; if (o) draftSection(o.title, o.ctx); }
+function researchGapByIdx(i) { const g = gapRegistry[i]; if (g !== undefined) researchGap(g); }
+
+function editTitle() {
+  const el = document.getElementById('title-display');
+  const inp = document.createElement('input');
+  inp.className = 'sba-title-input';
+  inp.value = {{ article.title|tojson }};
+  el.replaceWith(inp);
+  inp.focus();
+  inp.addEventListener('blur', () => saveTitle(inp.value));
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+}
+
+async function saveTitle(newTitle) {
+  newTitle = newTitle.trim();
+  if (!newTitle) { window.location.reload(); return; }
+  await fetch(`/applications/self_building_articles/${SLUG}/thesis`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({title: newTitle, thesis: {{ article.thesis|tojson }}})
+  });
+  window.location.reload();
+}
+
+function editThesis() {
+  const el = document.getElementById('thesis-display');
+  const ta = document.createElement('textarea');
+  ta.className = 'sba-thesis-edit';
+  ta.value = document.__thesis !== undefined ? document.__thesis : {{ article.thesis|tojson }};
+  el.replaceWith(ta);
+  ta.focus();
+  ta.addEventListener('blur', () => saveThesis(ta.value));
+}
+
+async function saveThesis(text) {
+  await fetch(`/applications/self_building_articles/${SLUG}/thesis`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({thesis: text})
+  });
+  window.location.reload();
+}
+
+async function adoptThesis(text) {
+  if (!confirm('Adopt this as the new working thesis? The old one is kept in version history.')) return;
+  await fetch(`/applications/self_building_articles/${SLUG}/adopt-thesis`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({thesis: text})
+  });
+  window.location.reload();
+}
+
+async function saveSettings() {
+  const mode = document.getElementById('regen-mode').value;
+  const threshold = parseInt(document.getElementById('regen-threshold').value, 10);
+  document.getElementById('threshold-wrap').style.display = mode === 'every' ? 'none' : '';
+  await fetch(`/applications/self_building_articles/${SLUG}/settings`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({auto_regen_mode: mode, story_threshold: threshold})
+  });
+}
+if (document.getElementById('regen-mode').value === 'every')
+  document.getElementById('threshold-wrap').style.display = 'none';
+
+async function submitScrap() {
+  const ta = document.getElementById('scrap-input');
+  const cp = document.getElementById('counterpoint').checked;
+  const text = ta.value.trim();
+  if (!text) return;
+  ta.disabled = true;
+  const r = await fetch(`/applications/self_building_articles/${SLUG}/scraps`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({content: text, counterpoint: cp})
+  });
+  ta.disabled = false;
+  if (r.ok) {
+    ta.value = '';
+    document.getElementById('counterpoint').checked = false;
+    refreshData(); startPolling();
+  } else alert('Failed to add scrap');
+}
+
+async function uploadFile(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('counterpoint', document.getElementById('counterpoint').checked ? 'true' : 'false');
+  const caption = document.getElementById('scrap-input').value.trim();
+  if (caption) fd.append('caption', caption);
+  const r = await fetch(`/applications/self_building_articles/${SLUG}/scraps`, {method: 'POST', body: fd});
+  if (r.ok) { document.getElementById('scrap-input').value = ''; refreshData(); startPolling(); }
+}
+
+async function deleteScrap(id) {
+  if (!confirm('Delete this scrap?')) return;
+  await fetch(`/applications/self_building_articles/${SLUG}/scraps/${id}`, {method: 'DELETE'});
+  refreshData();
+}
+
+async function deleteArticle() {
+  if (!confirm('Delete the story — this removes the whole article, all its scraps, drafted sections, and version history. This cannot be undone. Continue?')) return;
+  await fetch(`/applications/self_building_articles/${SLUG}/delete`, {method: 'POST'});
+  window.location.href = '/applications/self_building_articles/';
+}
+
+async function regenStory() {
+  await fetch(`/applications/self_building_articles/${SLUG}/regenerate-story`, {method: 'POST'});
+  document.getElementById('story-meta-count').textContent = 'regenerating…';
+  startPolling();
+}
+
+async function researchGap(gapText) {
+  const r = await fetch(`/applications/self_building_articles/${SLUG}/research`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({gap: gapText})
+  });
+  if (r.ok) { refreshData(); startPolling(); }
+}
+
+async function draftSection(title, context) {
+  const r = await fetch(`/applications/self_building_articles/${SLUG}/sections`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({section_title: title, outline_context: context})
+  });
+  if (r.ok) { refreshData(); startPolling(); }
+}
+
+async function redraftSection(id) {
+  await fetch(`/applications/self_building_articles/${SLUG}/sections/${id}/redraft`, {method: 'POST'});
+  refreshData(); startPolling();
+}
+
+async function deleteSection(id) {
+  if (!confirm('Delete this drafted section?')) return;
+  await fetch(`/applications/self_building_articles/${SLUG}/sections/${id}`, {method: 'DELETE'});
+  refreshData();
+}
+
+async function saveSection(id) {
+  const ta = document.getElementById(`sec-ta-${id}`);
+  await fetch(`/applications/self_building_articles/${SLUG}/sections/${id}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({draft_md: ta.value})
+  });
+  refreshData();
+}
+
+async function showVersion(id) {
+  const r = await fetch(`/applications/self_building_articles/${SLUG}/versions/${id}`);
+  if (!r.ok) return;
+  const v = await r.json();
+  document.getElementById('vm-title').textContent = `Story version · ${formatDate(v.created_at)} · ${v.scrap_count} scraps`;
+  document.getElementById('vm-body').innerHTML = v.story_md ? renderStory(v.story_md) : '<em>(thesis change — no story snapshot)</em>';
+  document.getElementById('version-modal').classList.add('show');
+}
+
+document.getElementById('scrap-input').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitScrap();
+});
+
+// Drag-drop
+const overlay = document.getElementById('drop-overlay');
+let dragCounter = 0;
+window.addEventListener('dragenter', e => { e.preventDefault(); dragCounter++; overlay.classList.add('show'); });
+window.addEventListener('dragleave', e => { dragCounter--; if (dragCounter <= 0) overlay.classList.remove('show'); });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault(); dragCounter = 0; overlay.classList.remove('show');
+  if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+});
+
+// ---------- markdown helpers ----------
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function inlineMd(s) {
+  s = esc(s);
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  s = s.replace(/_(.+?)_/g, '<em>$1</em>');
+  s = s.replace(/\[#(\d+)\]/g, '<a href="#scrap-$1" style="color:#6366f1;text-decoration:none;">[#$1]</a>');
+  return s;
+}
+
+// Split story md into named sections by ## heading
+function splitStory(md) {
+  const sections = {};
+  let cur = '_preamble', buf = [];
+  for (const line of (md || '').split('\n')) {
+    const m = line.match(/^## (.+)/);
+    if (m) { sections[cur] = buf.join('\n'); cur = m[1].trim().toLowerCase(); buf = []; }
+    else buf.push(line);
+  }
+  sections[cur] = buf.join('\n');
+  return sections;
+}
+
+function mdBlock(md) {
+  const lines = (md || '').split('\n');
+  let out = '', inList = false;
+  for (let line of lines) {
+    if (/^### /.test(line)) { if (inList) { out += '</ul>'; inList = false; } out += `<h3>${esc(line.slice(4))}</h3>`; }
+    else if (/^\s*- /.test(line)) { if (!inList) { out += '<ul>'; inList = true; } out += `<li>${inlineMd(line.replace(/^\s*- /, ''))}</li>`; }
+    else if (line.trim() === '') { if (inList) { out += '</ul>'; inList = false; } }
+    else { if (inList) { out += '</ul>'; inList = false; } out += `<p>${inlineMd(line)}</p>`; }
+  }
+  if (inList) out += '</ul>';
+  return out;
+}
+
+// Outline with Draft buttons on top-level bold bullets
+function renderOutline(md) {
+  const lines = (md || '').split('\n');
+  let out = '<ul>', pending = [];
+  const items = [];
+  let current = null;
+  for (const line of lines) {
+    const top = line.match(/^- \*\*(.+?)\*\*/);
+    const sub = line.match(/^\s+- (.+)/);
+    if (top) { current = {title: top[1], subs: []}; items.push(current); }
+    else if (sub && current) current.subs.push(sub[1]);
+  }
+  if (!items.length) return mdBlock(md);
+  outlineRegistry = [];
+  for (const it of items) {
+    const ctx = it.subs.join('\n');
+    const idx = outlineRegistry.length;
+    outlineRegistry.push({title: it.title, ctx});
+    const drafted = draftedTitles.has(it.title.trim().toLowerCase());
+    const check = drafted ? '<span class="sba-written-tag">\u2713 written</span>' : '';
+    const btnLabel = drafted ? 'Re-draft' : 'Draft this section';
+    out += `<li><strong>${esc(it.title)}</strong>${check}` +
+      `<button class="sba-draft-btn" onclick="draftSectionByIdx(${idx})">${btnLabel}</button>`;
+    if (it.subs.length) {
+      out += '<ul>' + it.subs.map(s => `<li>${inlineMd(s)}</li>`).join('') + '</ul>';
+    }
+    out += '</li>';
+  }
+  return out + '</ul>';
+}
+
+// Gaps with Research buttons
+function renderGaps(md) {
+  const bullets = (md || '').split('\n').filter(l => /^\s*- /.test(l)).map(l => l.replace(/^\s*- /, ''));
+  if (!bullets.length) return mdBlock(md);
+  gapRegistry = [];
+  return '<ul>' + bullets.map(b => {
+    if (/^\(none/i.test(b.trim())) return `<li>${inlineMd(b)}</li>`;
+    const idx = gapRegistry.length;
+    gapRegistry.push(b.replace(/\*\*/g, ''));
+    return `<li><span class="sba-gap-li"><span class="gap-txt">${inlineMd(b)}</span>` +
+      `<button class="sba-research-btn" onclick="researchGapByIdx(${idx})">Research</button></span></li>`;
+  }).join('') + '</ul>';
+}
+
+function renderStory(md) {
+  if (!md) return '<div style="color:#6b7280;font-size:13px;line-height:1.6"><p><em>Nothing here yet.</em></p><p>This panel fills in once you add scraps. The AI reads your whole pile and renders:</p><ul style="padding-left:18px"><li><strong>Story so far</strong> — the thread that\'s emerging</li><li><strong>Living outline</strong> — sections the article would have today</li><li><strong>Tensions</strong> — scraps that contradict each other</li><li><strong>Gaps</strong> — what\'s missing, with one-click research</li></ul><p>Add a few scraps and click <strong>Regenerate story</strong>.</p></div>';
+  const secs = splitStory(md);
+  let out = '';
+  if (secs['_preamble'] && secs['_preamble'].trim()) out += mdBlock(secs['_preamble']);
+  const order = ['story so far', 'living outline', 'tensions', 'gaps', 'emerging thesis'];
+  const seen = new Set(['_preamble']);
+  for (const key of order) {
+    if (!(key in secs)) continue;
+    seen.add(key);
+    const body = secs[key];
+    if (key === 'emerging thesis') {
+      const text = body.trim().replace(/\n+/g, ' ');
+      out += `<div class="sba-emerging"><div class="lbl">Emerging thesis</div>${mdBlock(body)}` +
+        `<button class="sba-btn tiny accent" style="margin-top:6px" onclick='adoptThesis(${JSON.stringify(text.replace(/\*\*/g,""))})'>Adopt as thesis</button></div>`;
+    } else {
+      out += `<h2>${key.replace(/\b\w/g, c => c.toUpperCase())}</h2>`;
+      if (key === 'living outline') out += renderOutline(body);
+      else if (key === 'gaps') out += renderGaps(body);
+      else out += mdBlock(body);
+    }
+  }
+  for (const key of Object.keys(secs)) {
+    if (seen.has(key)) continue;
+    out += `<h2>${esc(key.replace(/\b\w/g, c => c.toUpperCase()))}</h2>` + mdBlock(secs[key]);
+  }
+  return out;
+}
+
+// ---------- render lists ----------
+function renderScraps(scraps) {
+  document.getElementById('scrap-list').innerHTML = scraps.map(s => {
+    const head = `
+      <div class="sba-scrap-head">
+        <span class="sba-scrap-kind ${s.is_counterpoint?'cp':''} ${s.kind==='research'?'research':''}">${s.is_counterpoint?'counterpoint · ':''}${esc(s.kind)}</span>
+        <span>${formatDate(s.created_at)}</span>
+      </div>
+      <div class="sba-scrap-actions"><button class="sba-btn tiny danger" onclick="deleteScrap(${s.id})">×</button></div>`;
+    // URL scraps: collapse by default — URL is the always-visible header, summary hidden until expanded
+    if (s.kind === 'url') {
+      const dom = (() => { try { return new URL(s.url).hostname.replace(/^www\./,''); } catch(e){ return s.url; } })();
+      const pending = s.fetch_status === 'pending';
+      return `
+        <div class="sba-scrap ${s.is_counterpoint?'cp':''}" id="scrap-${s.id}">
+          ${head}
+          <details class="sba-url-details">
+            <summary class="sba-url-summary">
+              <span class="sba-url-dom">🔗 ${esc(dom)}</span>
+              ${pending ? '<span class="sba-scrap-pending">fetching…</span>' : (s.summary ? '<span class="sba-url-hint">summary</span>' : '')}
+            </summary>
+            <div class="sba-scrap-url"><a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a></div>
+            ${s.summary ? `<div class="sba-scrap-summary">${esc(s.summary)}</div>` : ''}
+          </details>
+        </div>`;
+    }
+    return `
+      <div class="sba-scrap ${s.is_counterpoint?'cp':''} ${s.kind==='research'?'research':''}" id="scrap-${s.id}">
+        ${head}
+        ${s.fetch_status==='pending' ? `<div class="sba-scrap-pending">${s.kind==='research'?'researching…':s.kind==='image'?'reading image…':'fetching summary…'}</div>` : ''}
+        ${s.content ? `<div class="sba-scrap-content">${esc(s.content)}</div>` : ''}
+        ${s.summary ? `<div class="sba-scrap-summary">${esc(s.summary)}</div>` : ''}
+        ${s.file_path ? `<div class="sba-scrap-content"><em>📎 ${esc(s.file_path.split('/').pop())}</em></div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderSections(sections) {
+  const wrap = document.getElementById('sections-wrap');
+  if (!sections.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  document.getElementById('sections-list').innerHTML = sections.map(sec => {
+    const open = openSections.has(sec.id);
+    const statusTxt = sec.status === 'drafting' ? 'drafting…' : sec.status === 'failed' ? 'failed' : 'done';
+    return `
+    <div class="sba-section-card">
+      <div class="sba-section-head" onclick="toggleSection(${sec.id})">
+        <span class="sba-section-title">${esc(sec.section_title)}</span>
+        <span class="sba-section-status">${statusTxt} ${open?'▾':'▸'}</span>
+      </div>
+      <div class="sba-section-body ${open?'open':''}" id="sec-body-${sec.id}">
+        ${sec.status === 'drafting' ? '<em>Drafting from scraps…</em>' : `
+        <textarea id="sec-ta-${sec.id}">${esc(sec.draft_md || '')}</textarea>
+        <div class="sba-section-tools">
+          <button class="sba-btn tiny" onclick="saveSection(${sec.id})">Save</button>
+          <button class="sba-btn tiny ghost" onclick="redraftSection(${sec.id})">Re-draft</button>
+          <button class="sba-btn tiny danger" onclick="deleteSection(${sec.id})">Delete</button>
+        </div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSection(id) {
+  if (openSections.has(id)) openSections.delete(id); else openSections.add(id);
+  refreshData();
+}
+
+function renderVersions(versions) {
+  const wrap = document.getElementById('versions-wrap');
+  if (!versions.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  document.getElementById('versions-list').innerHTML = versions.map(v => `
+    <div class="sba-version">
+      <div class="vh"><span>${formatDate(v.created_at)} · ${v.scrap_count} scraps</span><a onclick="showVersion(${v.id})">view</a></div>
+      <div class="note">${mdBlock(v.change_note || '')}</div>
+    </div>
+  `).join('');
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+
+async function refreshData() {
+  const r = await fetch(`/applications/self_building_articles/${SLUG}/data`);
+  if (!r.ok) return;
+  const d = await r.json();
+  document.__thesis = d.article.thesis;
+  draftedTitles = new Set(d.sections.filter(s => s.status === 'done').map(s => (s.section_title||'').trim().toLowerCase()));
+  renderScraps(d.scraps);
+  renderSections(d.sections);
+  renderVersions(d.versions);
+  document.getElementById('story-body').innerHTML = renderStory(d.article.story_md);
+  document.getElementById('story-meta-count').textContent = `${d.article.scraps_since_story} since last regen`;
+  const pendingScrap = d.scraps.some(s => s.fetch_status === 'pending');
+  const pendingSection = d.sections.some(s => s.status === 'drafting');
+  if (!pendingScrap && !pendingSection) stopPolling();
+}
+
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(refreshData, 3500);
+}
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// initial render
+refreshData();
+{% if scraps|selectattr('fetch_status','equalto','pending')|list or sections|selectattr('status','equalto','drafting')|list %}
+startPolling();
+{% endif %}
+</script>
+{% endblock %}
