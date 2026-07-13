@@ -54,8 +54,8 @@ Built for a Flask blueprint auto-discovery scaffold (one module per app in `appl
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `SBA_DATA_DIR` | `./sba-data` | Uploads, PAT file, mirror working dir |
-| `SBA_LOG_DIR` | `./sba-data/logs` | Worker logs (one per article) |
+| `SBA_DATA_DIR` | `~/sba-data` | Uploads, PAT file, mirror working dir. **Keep this OUTSIDE the app directory** — file-watching scaffolds restart on every write, and worker logs/uploads land here continuously |
+| `SBA_LOG_DIR` | `~/sba-data/logs` | Worker logs (one per article) |
 | `SBA_LLM_BASE_URL` | `http://127.0.0.1:18080/api/v1` | OpenAI-compatible endpoint |
 | `SBA_LLM_API_KEY` | `unused` | API key for that endpoint |
 | `SBA_GEN_MODEL` | `anthropic/claude-opus-4.8` | Reasoning-heavy generation |
@@ -69,6 +69,7 @@ This app was built to run behind an authenticating reverse proxy (all routes ass
 - **Auth** on every route — there is none built in.
 - **Upload size limits** (`app.config["MAX_CONTENT_LENGTH"]`) — the original deployment relied on a proxy-level cap.
 - The URL fetcher has an **SSRF guard** (rejects non-http(s) schemes and private/loopback/link-local/reserved addresses), but review it against your network layout.
+- **Sandboxed / egress-gated environments**: the fetcher distinguishes a workspace firewall block ("approve the domain, re-add the URL") from a site-side refusal ("try an archive") and surfaces the right fix on the scrap. If your platform uses a different block sentinel than an HTTP error mentioning "blocked by firewall/policy" or a refused connection, adapt `fetch_url`'s error handling.
 - The PAT settings endpoint writes a token to disk (`chmod 600`) — ensure only trusted users can reach it.
 - File uploads are name-sanitized and stored outside the web root, but are not content-scanned.
 
