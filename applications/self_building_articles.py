@@ -28,11 +28,11 @@ blueprint = Blueprint(
     template_folder="../templates/self_building_articles",
 )
 
-ROOT = Path("/home/console/claude/self-building-articles")
+ROOT = Path(os.environ.get("SBA_DATA_DIR", "./sba-data"))
 ARTICLES_DIR = ROOT / "articles"
 PAT_PATH = ROOT / ".git" / "github_pat"
 UPLOADS_DIR = ROOT / "uploads"
-LOG_DIR = Path("/home/console/http/default/data/self_building_articles")
+LOG_DIR = Path(os.environ.get("SBA_LOG_DIR", "./sba-data/logs"))
 WORKER = Path(__file__).parent / "_self_building_articles_worker.py"
 DEFAULT_REPO = ""  # set your mirror repo (owner/name) in Settings
 
