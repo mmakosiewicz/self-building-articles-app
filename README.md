@@ -36,6 +36,14 @@ Built for a Flask blueprint auto-discovery scaffold (one module per app in `appl
 - `applications/_self_building_articles_worker.py` — background worker (detached subprocess): URL fetch + summarize, image vision, gap research, story regeneration, section drafting
 - `templates/self_building_articles/` — UI (vanilla JS, no build step)
 
+**Templates extend `base.html`** — they expect your scaffold to provide a `templates/base.html` with `{% block title %}` and `{% block content %}`. Each page carries its own `<style>` inside the content block, so no `{% block head %}` support is required and no external CSS files are needed. A minimal base works fine:
+
+```html
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{% block title %}{% endblock %}</title></head>
+<body>{% block content %}{% endblock %}</body></html>
+```
+
 **Storage**: PostgreSQL (tables `sba_articles`, `sba_scraps`, `sba_sections`, `sba_story_versions`, `sba_settings` — created automatically on first import). Connects over the local socket with peer auth as the current OS user; adjust `conn()` for your environment.
 
 **LLM**: OpenAI-compatible endpoint. Model split in the worker:
