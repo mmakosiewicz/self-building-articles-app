@@ -70,7 +70,7 @@
 
   <div class="sba-card">
     <h2>GitHub Personal Access Token</h2>
-    <p>Required for the mirror to push. Needs <code>repo</code> scope (fine-grained: Contents read/write on the mirror repo only). Stored on this server at <code>~/claude/self-building-articles/.git/github_pat</code> (chmod 600) — never in the database.</p>
+    <p>Required for the mirror to push. Needs <code>repo</code> scope (fine-grained: Contents read/write on the mirror repo only). Stored on the server's filesystem at <code>&lt;SBA_DATA_DIR&gt;/.git/github_pat</code> (chmod 600) — never in the database.</p>
     {% if has_pat %}<div class="ok">✓ PAT configured. Replace below if needed.</div>{% endif %}
     <div style="margin: 14px 0;">
       <label>PAT</label>
