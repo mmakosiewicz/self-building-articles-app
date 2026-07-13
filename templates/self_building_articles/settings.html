@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Self-Building Articles · Settings{% endblock %}
 
-{% block head %}
+{% block content %}
 <style>
   .sba-wrap { max-width: 720px; margin: 24px auto; padding: 0 20px; color: #111827; }
   .sba-wrap h1 { font-size: 24px; margin: 0 0 4px; }
@@ -32,9 +32,7 @@
   .mirror-state.on { color: #059669; }
   .mirror-state.off { color: #9ca3af; }
 </style>
-{% endblock %}
 
-{% block content %}
 <div class="sba-wrap">
   <a class="back" href="/applications/self_building_articles/">← All articles</a>
   <h1 style="margin-top:8px;">Settings</h1>
