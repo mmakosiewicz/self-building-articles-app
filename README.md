@@ -1,5 +1,7 @@
 # Self-Building Articles
 
+> Built with and for [Letaido.com](https://letaido.com) — an AI workspace where an agent builds and runs internal tools like this one. The app has no Letaido-specific dependencies, though: it's a plain Flask + PostgreSQL app that should work in any AI workspace or standalone (see [Architecture](#architecture) and [Security notes](#security-notes-read-before-deploying-anywhere-public)).
+
 A living-draft writing tool. You set a working title and a rough thesis, then drop **scraps** as you find them — quotes, URLs, screenshots, stream-of-thought notes, counterpoints. The app continuously re-reads the whole pile and renders **the article that's trying to be born**: what's emerging, a living outline, tensions in your material, gaps worth researching, and — when the material outgrows your thesis — a proposed stronger one.
 
 ## How it works
