@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Self-Building Articles · Settings{% endblock %}
+
+{% block head %}
+<style>
+  .sba-wrap { max-width: 720px; margin: 24px auto; padding: 0 20px; color: #111827; }
+  .sba-wrap h1 { font-size: 24px; margin: 0 0 4px; }
+  .sba-sub { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+  .sba-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 22px; margin-bottom: 16px; }
+  .sba-card h2 { font-size: 16px; margin: 0 0 8px; color: #111827; }
+  .sba-card p { font-size: 13px; color: #4b5563; line-height: 1.55; margin: 0 0 14px; }
+  .sba-card ul { font-size: 13px; color: #4b5563; line-height: 1.6; margin: 0 0 14px; padding-left: 20px; }
+  label { display: block; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  input[type=password], input[type=text] {
+    width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 14px; background: #fff; color: #111827; box-sizing: border-box;
+    font-family: ui-monospace, monospace;
+  }
+  .sba-btn { background: #111827; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .sba-btn:hover { background: #1f2937; }
+  .ok { color: #065f46; font-size: 13px; }
+  .back { color: #6b7280; text-decoration: none; font-size: 13px; }
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .toggle-row .lbl { font-size: 14px; color: #111827; font-weight: 500; }
+  .switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 999px; cursor: pointer; transition: background 150ms; }
+  .slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 150ms; }
+  .switch input:checked + .slider { background: #059669; }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .mirror-state { font-size: 12px; }
+  .mirror-state.on { color: #059669; }
+  .mirror-state.off { color: #9ca3af; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sba-wrap">
+  <a class="back" href="/applications/self_building_articles/">← All articles</a>
+  <h1 style="margin-top:8px;">Settings</h1>
+  <div class="sba-sub">GitHub mirror — an optional, continuous backup of your work-in-progress.</div>
+
+  <div class="sba-card">
+    <h2>GitHub mirror</h2>
+    <p><strong>What this does:</strong> while enabled, the app continuously pushes your in-progress writing to a GitHub repo — on every scrap you add, every thesis edit, and every story regeneration. Per article it writes:</p>
+    <ul>
+      <li><code>articles/&lt;slug&gt;/meta.json</code> — title, thesis, status</li>
+      <li><code>articles/&lt;slug&gt;/story.md</code> — the current "What's emerging" analysis</li>
+      <li><code>articles/&lt;slug&gt;/scraps.md</code> — all scraps in one document</li>
+      <li><code>articles/&lt;slug&gt;/drafts.md</code> — your drafted sections</li>
+    </ul>
+    <p>Your raw notes and half-formed drafts end up in that repo, so point it at a <strong>private</strong> repo unless you want them public. Switch it off and nothing leaves this workspace — articles live in the local database either way.</p>
+
+    <div class="toggle-row">
+      <label class="switch" style="margin:0">
+        <input type="checkbox" id="mirror-toggle" {{ 'checked' if mirror_on else '' }} onchange="saveMirror()" />
+        <span class="slider"></span>
+      </label>
+      <span class="lbl">Mirror to GitHub</span>
+      <span class="mirror-state {{ 'on' if mirror_on else 'off' }}" id="mirror-state">{{ 'active' if mirror_on else 'off — nothing is pushed' }}</span>
+    </div>
+
+    <div style="margin: 14px 0;">
+      <label>Repository (owner/name)</label>
+      <input id="repo" type="text" value="{{ repo }}" placeholder="you/your-private-repo" />
+    </div>
+    <button class="sba-btn" onclick="saveMirror(true)">Save repository</button>
+    <span id="mirror-msg" class="ok" style="margin-left: 10px;"></span>
+  </div>
+
+  <div class="sba-card">
+    <h2>GitHub Personal Access Token</h2>
+    <p>Required for the mirror to push. Needs <code>repo</code> scope (fine-grained: Contents read/write on the mirror repo only). Stored on this server at <code>~/claude/self-building-articles/.git/github_pat</code> (chmod 600) — never in the database.</p>
+    {% if has_pat %}<div class="ok">✓ PAT configured. Replace below if needed.</div>{% endif %}
+    <div style="margin: 14px 0;">
+      <label>PAT</label>
+      <input id="pat" type="password" placeholder="ghp_... or github_pat_..." />
+    </div>
+    <button class="sba-btn" onclick="savePat()">Save</button>
+    <span id="msg" style="margin-left: 10px; color: #065f46; font-size: 13px;"></span>
+  </div>
+</div>
+
+<script>
+async function saveMirror(withRepo) {
+  const enabled = document.getElementById('mirror-toggle').checked;
+  const body = {enabled};
+  if (withRepo) body.repo = document.getElementById('repo').value.trim();
+  const r = await fetch('/applications/self_building_articles/settings/mirror', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  const st = document.getElementById('mirror-state');
+  if (r.ok) {
+    st.textContent = d.mirror_enabled ? 'active' : 'off — nothing is pushed';
+    st.className = 'mirror-state ' + (d.mirror_enabled ? 'on' : 'off');
+    if (withRepo) document.getElementById('mirror-msg').textContent = '✓ Saved';
+  } else {
+    document.getElementById('mirror-msg').textContent = d.error || 'Failed';
+  }
+}
+
+async function savePat() {
+  const pat = document.getElementById('pat').value.trim();
+  if (!pat) return;
+  const r = await fetch('/applications/self_building_articles/settings/pat', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({pat})
+  });
+  if (r.ok) {
+    document.getElementById('msg').textContent = '✓ Saved';
+    document.getElementById('pat').value = '';
+    setTimeout(() => location.reload(), 600);
+  }
+}
+</script>
+{% endblock %}
