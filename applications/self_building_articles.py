@@ -28,11 +28,11 @@ blueprint = Blueprint(
     template_folder="../templates/self_building_articles",
 )
 
-ROOT = Path(os.environ.get("SBA_DATA_DIR", "./sba-data"))
+ROOT = Path(os.environ.get("SBA_DATA_DIR", os.path.expanduser("~/sba-data")))
 ARTICLES_DIR = ROOT / "articles"
 PAT_PATH = ROOT / ".git" / "github_pat"
 UPLOADS_DIR = ROOT / "uploads"
-LOG_DIR = Path(os.environ.get("SBA_LOG_DIR", "./sba-data/logs"))
+LOG_DIR = Path(os.environ.get("SBA_LOG_DIR", os.path.expanduser("~/sba-data/logs")))
 WORKER = Path(__file__).parent / "_self_building_articles_worker.py"
 DEFAULT_REPO = ""  # set your mirror repo (owner/name) in Settings
 
