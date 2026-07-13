@@ -38,11 +38,21 @@ Built for a Flask blueprint auto-discovery scaffold (one module per app in `appl
 
 **Storage**: PostgreSQL (tables `sba_articles`, `sba_scraps`, `sba_sections`, `sba_story_versions`, `sba_settings` — created automatically on first import). Connects over the local socket with peer auth as the current OS user; adjust `conn()` for your environment.
 
-**LLM**: OpenAI-compatible endpoint (default `http://127.0.0.1:18080/api/v1`). Model split in the worker:
+**LLM**: OpenAI-compatible endpoint. Model split in the worker:
 - `GEN_MODEL` (default `anthropic/claude-opus-4.8`) — story regeneration, section drafts, gap research (appends `:online` for web-grounded research, with graceful fallback)
 - `MODEL` (default `anthropic/claude-sonnet-4.6`) — URL summaries, image OCR, version-diff notes
 
-Adjust both constants and the `llm()` base URL for your provider.
+## Configuration (environment variables)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SBA_DATA_DIR` | `./sba-data` | Uploads, PAT file, mirror working dir |
+| `SBA_LOG_DIR` | `./sba-data/logs` | Worker logs (one per article) |
+| `SBA_LLM_BASE_URL` | `http://127.0.0.1:18080/api/v1` | OpenAI-compatible endpoint |
+| `SBA_LLM_API_KEY` | `unused` | API key for that endpoint |
+| `SBA_GEN_MODEL` | `anthropic/claude-opus-4.8` | Reasoning-heavy generation |
+| `SBA_MODEL` | `anthropic/claude-sonnet-4.6` | Cheap mechanical calls |
+| `SBA_FETCHER` | *(none)* | Optional external URL-fetcher script (prints markdown for a URL); plain urllib fallback otherwise |
 
 ## Security notes (read before deploying anywhere public)
 
