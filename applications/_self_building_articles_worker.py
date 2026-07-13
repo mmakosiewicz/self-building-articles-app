@@ -89,7 +89,7 @@ def fetch_url(url: str) -> tuple[str, str | None]:
         except Exception:
             pass
     try:
-        import urllib.request, re as _re
+        import urllib.request, urllib.error, re as _re
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=20) as resp:
             html = resp.read(2_000_000).decode("utf-8", errors="ignore")
@@ -98,6 +98,25 @@ def fetch_url(url: str) -> tuple[str, str | None]:
         text = _re.sub(r"<[^>]+>", " ", text)
         text = _re.sub(r"\s+", " ", text)
         return text[:20000], None
+    except urllib.error.HTTPError as e:
+        # Distinguish a sandbox/workspace egress block from the site refusing us —
+        # they need different user actions.
+        snippet = ""
+        try:
+            snippet = e.read(2000).decode("utf-8", errors="ignore").lower()
+        except Exception:
+            pass
+        if "blocked by firewall" in snippet or "blocked by policy" in snippet:
+            return "", ("Blocked by this workspace's network policy (not the site). "
+                        "Fix: approve outbound access for this domain, then re-add the URL.")
+        return "", (f"The site returned HTTP {e.code} (site-side refusal, not a policy block). "
+                    "Fix: try an archived/cached copy, or paste the text as a text scrap.")
+    except urllib.error.URLError as e:
+        reason = str(getattr(e, "reason", e))
+        if "refused" in reason.lower():
+            return "", ("Connection refused — in a sandboxed workspace this usually means the "
+                        "domain is not on the outbound allowlist. Fix: approve the domain, then re-add the URL.")
+        return "", f"Network error: {reason}"
     except Exception as e:
         return "", str(e)
 
