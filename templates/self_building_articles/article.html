@@ -4,20 +4,15 @@
 {% block content %}
 <style>
   body { background: #f9fafb; }
-  .sba-app { display: grid; grid-template-columns: 220px 1fr 420px; height: calc(100vh - 60px); background: #f9fafb; color: #111827; }
+  .sba-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 520px); height: calc(100vh - 96px); background: #f9fafb; color: #111827; }
   .sba-col { overflow-y: auto; }
-  .sba-col-left { background: #fff; border-right: 1px solid #e5e7eb; padding: 16px; }
   .sba-col-mid { padding: 20px 28px; }
   .sba-col-right { background: #fff; border-left: 1px solid #e5e7eb; padding: 20px; }
 
-  .sba-back { font-size: 12px; color: #6b7280; text-decoration: none; }
+  .sba-topnav { display: flex; align-items: center; gap: 14px; padding: 8px 28px; background: #fff; border-bottom: 1px solid #e5e7eb; height: 36px; }
+  .sba-back { font-size: 12px; color: #6b7280; text-decoration: none; white-space: nowrap; }
   .sba-back:hover { color: #111827; }
-  .sba-art-list { list-style:none; padding:0; margin: 14px 0 0; font-size: 13px; }
-  .sba-art-list li { padding: 8px 10px; border-radius: 5px; cursor: pointer; color: #4b5563; margin-bottom: 2px; }
-  .sba-art-list li:hover { background: #f3f4f6; }
-  .sba-art-list li.active { background: #eef2ff; color: #3730a3; font-weight: 500; }
-  .sba-art-list a { color: inherit; text-decoration: none; display: block; }
-  .sba-art-list .ct { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+  .sba-art-switch { font-size: 13px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #111827; max-width: 340px; }
 
   .sba-title-row { display:flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .sba-title { font-size: 22px; font-weight: 600; color: #111827; cursor: pointer; padding: 4px 6px; margin: -4px -6px; border-radius: 4px; }
@@ -142,22 +137,16 @@
   </div>
 </div>
 
-<div class="sba-app">
+<div class="sba-topnav">
+  <a class="sba-back" href="/applications/self_building_articles/">← All articles</a>
+  <select class="sba-art-switch" onchange="if(this.value)location.href='/applications/self_building_articles/'+this.value" title="Switch to another article">
+    {% for a in all_articles %}
+    <option value="{{ a.slug }}" {{ 'selected' if a.slug == article.slug else '' }}>{{ a.title }} ({{ a.scrap_count }} scrap{{ '' if a.scrap_count == 1 else 's' }})</option>
+    {% endfor %}
+  </select>
+</div>
 
-  <!-- LEFT: article list -->
-  <div class="sba-col sba-col-left">
-    <a class="sba-back" href="/applications/self_building_articles/">← All articles</a>
-    <ul class="sba-art-list">
-      {% for a in all_articles %}
-      <li class="{{ 'active' if a.slug == article.slug else '' }}">
-        <a href="/applications/self_building_articles/{{ a.slug }}">
-          {{ a.title }}
-          <div class="ct">{{ a.scrap_count }} scrap{{ '' if a.scrap_count == 1 else 's' }} · {{ a.status }}</div>
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
+<div class="sba-app">
 
   <!-- MIDDLE: scrap stream + drafted sections -->
   <div class="sba-col sba-col-mid">
@@ -500,8 +489,9 @@ function renderStory(md) {
     const body = secs[key];
     if (key === 'emerging thesis') {
       const text = body.trim().replace(/\n+/g, ' ');
+      window.emergingThesisText = text.replace(/\*\*/g, "");
       out += `<div class="sba-emerging"><div class="lbl">Emerging thesis</div>${mdBlock(body)}` +
-        `<button class="sba-btn tiny accent" style="margin-top:6px" onclick='adoptThesis(${JSON.stringify(text.replace(/\*\*/g,""))})'>Adopt as thesis</button></div>`;
+        `<button class="sba-btn tiny accent" style="margin-top:6px" onclick="adoptThesis(window.emergingThesisText)">Adopt as thesis</button></div>`;
     } else {
       out += `<h2>${key.replace(/\b\w/g, c => c.toUpperCase())}</h2>`;
       if (key === 'living outline') out += renderOutline(body);
