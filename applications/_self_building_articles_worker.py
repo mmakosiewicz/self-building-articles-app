@@ -17,8 +17,8 @@ import psycopg2
 import psycopg2.extras
 from openai import OpenAI
 
-MODEL = "anthropic/claude-sonnet-4.6"          # cheap mechanical calls (URL summary, image OCR, diff note)
-GEN_MODEL = "anthropic/claude-opus-4.8"        # reasoning-heavy generation (story, section drafts, research)
+MODEL = os.environ.get("SBA_MODEL", "anthropic/claude-sonnet-4.6")          # cheap mechanical calls (URL summary, image OCR, diff note)
+GEN_MODEL = os.environ.get("SBA_GEN_MODEL", "anthropic/claude-opus-4.8")        # reasoning-heavy generation (story, section drafts, research)
 
 
 def conn():
@@ -27,7 +27,10 @@ def conn():
 
 
 def llm():
-    return OpenAI(base_url="http://127.0.0.1:18080/api/v1", api_key="unused")
+    return OpenAI(
+        base_url=os.environ.get("SBA_LLM_BASE_URL", "http://127.0.0.1:18080/api/v1"),
+        api_key=os.environ.get("SBA_LLM_API_KEY", "unused"),
+    )
 
 
 def q_one(sql, params=()):
@@ -70,11 +73,11 @@ def fetch_url(url: str) -> tuple[str, str | None]:
     """Returns (markdown_body, error_string_or_none)."""
     if not _is_safe_url(url):
         return "", "URL rejected (non-http scheme or private address)"
-    candidates = [
-        "/opt/letaido/agent/skills/web-fetch/fetch.py",
-        "/opt/letaido/agent/skills/web-fetch/web_fetch.py",
-    ]
-    fetcher = next((p for p in candidates if os.path.exists(p)), None)
+    # Optional external fetcher script (set SBA_FETCHER to a script that prints
+    # markdown for a URL); falls back to plain urllib below.
+    fetcher = os.environ.get("SBA_FETCHER")
+    if fetcher and not os.path.exists(fetcher):
+        fetcher = None
     if fetcher:
         try:
             out = subprocess.run(
